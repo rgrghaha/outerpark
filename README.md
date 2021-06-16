@@ -42,7 +42,8 @@
 # 분석/설계
 
 ## AS-IS 조직 (Horizontally-Aligned)
-  ![image](https://user-images.githubusercontent.com/82069747/122218792-c0a9fe00-cee9-11eb-8c50-46d154807618.png)
+  ![9E94402F-92DF-40CC-8FC6-90EAD7A22050_4_5005_c](https://user-images.githubusercontent.com/82069747/122219331-4c238f00-ceea-11eb-95c6-91b673812268.jpeg)
+
 
 ## TO-BE 조직 (Vertically-Aligned)
   ![image](https://user-images.githubusercontent.com/82069747/122219147-1b435a00-ceea-11eb-8712-5f6b8d2e7008.png)
