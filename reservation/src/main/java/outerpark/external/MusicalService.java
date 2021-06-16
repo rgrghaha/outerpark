@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Date;
 
-@FeignClient(name="musical", url="http://localhost:8081")
+@FeignClient(name="musical", url="http://musical:8080")
 public interface MusicalService {
 
     // @RequestMapping(method= RequestMethod.GET, path="/musicals")
