@@ -45,7 +45,8 @@
   ![image](https://user-images.githubusercontent.com/82069747/122218792-c0a9fe00-cee9-11eb-8c50-46d154807618.png)
 
 ## TO-BE 조직 (Vertically-Aligned)
-  ![image](https://user-images.githubusercontent.com/82069747/122218882-d61f2800-cee9-11eb-93bb-09c9b9217123.png)
+  ![image](https://user-images.githubusercontent.com/82069747/122219147-1b435a00-ceea-11eb-8712-5f6b8d2e7008.png)
+
 
 
 ## EventStorming 결과
