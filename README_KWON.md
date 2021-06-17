@@ -224,17 +224,81 @@ http POST http://gateway:8080/musicals musicalId=1003 name=HOT reservableSeat=10
 ### CQRS/saga/correlation
 Materialized View를 구현하여, 타 마이크로서비스의 데이터 원본에 접근없이(Composite 서비스나 조인SQL 등 없이)도 내 서비스의 화면 구성과 잦은 조회가 가능하게 구현해 두었다. 본 프로젝트에서 View 역할은 MyPages 서비스가 수행한다.
 
-예약(reservation) 실행 후 MyPages 화면
-```
- 캡쳐 : 예약등록 후 mypage    
-      
-```
+#TEST 시나리오
 
-예약취소(reservation Cancelled)후 MyPages 화면
-```
- 캡쳐 : 예약취소 후 mypage   
-      
-```
+1. MD가 뮤지컬 정보 등록
+   http POST http://localhost:8081/musicals musicalId="1" name="Frozen" reservableSeat="100"
+
+![image](https://user-images.githubusercontent.com/84000853/122401028-316b1c00-cfb7-11eb-9f20-32f02f150fc9.png)
+
+
+2. 사용자가 뮤지컬 예약
+   2.1 정상예약 #1
+       http POST http://localhost:8082/reservations musicalId="1" seats="10" price="50000"
+       정상예약 #2
+       http POST http://localhost:8082/reservations musicalId="1" seats="15" price="50000"
+
+![image](https://user-images.githubusercontent.com/84000853/122401281-6aa38c00-cfb7-11eb-82f1-e86f114466c5.png)
+
+   2.2 MD가 관리하는 뮤지컬 정보상의 좌석수(잔여좌석수)를 초과한 예약 시도시에는 예약이 되지 않도록 처리함
+       - FeignClient를 이용한 Req/Resp 연동
+       http POST http://localhost:8082/reservations musicalId="1" seats="200" price="50000"
+![image](https://user-images.githubusercontent.com/84000853/122401363-7bec9880-cfb7-11eb-88b6-4fb3febc23f7.png)
+
+
+3. 뮤지컬 예약 후, 각 마이크로 서비스내 Pub/Sub을 통해 변경된 데이터 확인 
+   3.1 뮤지컬 정보 조회 (좌석수량 차감여부 확인)  --> 좌석수가 75로 줄어듦
+       http GET http://localhost:8081/musicals/1
+       ![image](https://user-images.githubusercontent.com/84000853/122401410-87d85a80-cfb7-11eb-96a2-a63c95ebba9d.png)
+   
+       
+   3.2 요금결제 내역 조회     --> 2 Row 생성 : Reservation 생성 2건
+       http GET http://localhost:8083/payments
+       ![image](https://user-images.githubusercontent.com/84000853/122401517-a50d2900-cfb7-11eb-814f-a8eb7789d8a6.png)
+
+       
+   3.3 알림 조회              --> 2 Row 생성 : PaymentApproved 생성 2건
+       http GET http://localhost:8084/notices
+       ![image](https://user-images.githubusercontent.com/84000853/122401559-af2f2780-cfb7-11eb-903e-faf850510de7.png)
+
+       
+   3.4 마이페이지 조회        --> 2 Row 생성 : Reservation  2건 ->> PaymentApproved  2건 변경
+       http GET http://localhost:8085/myPages
+       ![image](https://user-images.githubusercontent.com/84000853/122401619-bb1ae980-cfb7-11eb-874c-af75fc0fde93.png)
+
+
+
+4. 사용자가 뮤지컬 예약 취소
+   4.1 예약번호 #1을 취소함
+   http DELETE http://localhost:8082/reservations/1
+   ![image](https://user-images.githubusercontent.com/84000853/122401687-c837d880-cfb7-11eb-983f-7b653ebe25da.png)
+
+   
+   4.2 취소내역 확인 (#2만 남음)
+   http GET http://localhost:8082/reservations
+![image](https://user-images.githubusercontent.com/84000853/122401728-d128aa00-cfb7-11eb-9eb1-9b08498328ea.png)
+
+
+5. 뮤지컬 예약 취소 후, 각 마이크로 서비스내 Pub/Sub을 통해 변경된 데이터 확인
+   5.1 뮤지컬 정보 조회 (좌석수량 증가여부 확인)  --> 좌석수가 85로 늘어남
+       http GET http://localhost:8081/musicals/1
+       ![image](https://user-images.githubusercontent.com/84000853/122401785-e1408980-cfb7-11eb-95f9-31487e09c955.png)
+
+   5.2 요금결제 내역 조회    --> 1번 예약에 대한 결제건이 paymentCancelled 로 변경됨 (UPDATE)
+       http GET http://localhost:8083/payments
+       ![image](https://user-images.githubusercontent.com/84000853/122401809-e69dd400-cfb7-11eb-8216-8fb55d87c36f.png)
+
+   5.3 알림 조회             --> 1번 예약에 대한 예약취소건이 paymentCancelled 로 1 row 추가됨 (INSERT)
+       http GET http://localhost:8084/notices
+       ![image](https://user-images.githubusercontent.com/84000853/122401844-eef60f00-cfb7-11eb-8303-52bd835137ce.png)
+
+   5.4 마이페이지 조회       --> 1 Row 추가 생성 : PaymentCancelled 생성 1건
+       http GET http://localhost:8085/myPages
+       ![image](https://user-images.githubusercontent.com/84000853/122401898-f87f7700-cfb7-11eb-86ee-7e5b7ce2d814.png)
+
+       
+![image](https://user-images.githubusercontent.com/84000853/122397565-0af7b180-cfb4-11eb-9519-dca6dbd1b97f.png)
+
 
 
 
