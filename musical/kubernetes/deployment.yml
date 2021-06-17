@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: musical
-          image: outerparkskccacr.azurecr.io/musical:latest
+          image: outerparkskacr.azurecr.io/musical:latest
           ports:
             - containerPort: 8080
           readinessProbe:
