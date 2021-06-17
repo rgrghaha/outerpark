@@ -29,18 +29,23 @@ public class Reservation {
     // 강제 Exception을 발생시켜서, reservation 이 POST되지 않도록 처리한다.
     // *************************************************************************
     @PrePersist
-    public void onPrePersist() throws Exception{
+    public void onPrePersist() throws Exception {
 
         boolean rslt = ReservationApplication.applicationContext.getBean(outerpark.external.MusicalService.class)
             .modifySeat(this.getMusicalId(), this.getSeats().intValue());
 
 
         if(rslt) {
+            
+            System.out.println("##### Reservation - Result : true #####");
+            this.setStatus("SeatsReserved");
             Reserved reserved = new Reserved();
             BeanUtils.copyProperties(this, reserved);
             reserved.publishAfterCommit();
+            
         }else{
-            throw new Exception("e");
+            System.out.println("##### Reservation - Result : false - too big seats count #####");
+            throw new Exception("Too big seats Count");
         }
         //Following code causes dependency to external APIs
         // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
