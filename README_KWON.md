@@ -82,7 +82,7 @@ msaez.io를 통해 구현한 Aggregate 단위로 Entity를 선언 후, 구현을
 Entity Pattern과 Repository Pattern을 적용하기 위해 Spring Data REST의 RestRepository를 적용하였다.
 
 **Musical 서비스의 musical.java**
-```
+```java
 package outerpark;
 
 import javax.persistence.*;
@@ -149,7 +149,7 @@ public class Musical {
 ```
 
 **Payment 서비스의 PolicyHandler.java**
-```
+```java
 package outerpark;
 
 import outerpark.config.kafka.KafkaProcessor;
