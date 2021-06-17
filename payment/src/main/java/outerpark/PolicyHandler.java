@@ -15,31 +15,35 @@ public class PolicyHandler{
     @StreamListener(KafkaProcessor.INPUT)
     public void wheneverReserved_ApprovePayment(@Payload Reserved reserved){
 
-        if(!reserved.validate()) return;
+        //if(!reserved.validate()) return;
 
-        System.out.println("\n\n##### listener ApprovePayment : " + reserved.toJson() + "\n\n");
+        if (reserved.validate()) {
+            System.out.println("\n\n##### listener ApprovePayment : " + reserved.toJson() + "\n\n");
 
-        // Sample Logic //
-        Payment payment = new Payment();
-        payment.setReservationId(reserved.getId());
-        //payment.setPrice(reserved.getPrice());
-        payment.setStatus("ApprovedPayment");
-        paymentRepository.save(payment);
-            
+            // Sample Logic //
+            Payment payment = new Payment();
+            payment.setReservationId(reserved.getId());
+            //payment.setPrice(reserved.getPrice());
+            payment.setStatus("ApprovedPayment");
+            paymentRepository.save(payment);
+        }
     }
 
     @StreamListener(KafkaProcessor.INPUT)
     public void wheneverCanceled_CancelPayment(@Payload Canceled canceled){
 
-        if(!canceled.validate()) return;
+        //if(!canceled.validate()) return;
 
-        //System.out.println("\n\n##### listener CancelPayment : " + canceled.toJson() + "\n\n");
+        if(canceled.validate()) {
+            System.out.println("\n\n##### listener CancelPayment : " + canceled.toJson() + "\n\n");
 
-        // Sample Logic //
-        Payment payment = paymentRepository.findByReservationId(canceled.getId());
-        //payment.setPrice(canceled.getPrice());
-        payment.setStatus("PaymentCanceled");
-        paymentRepository.delete(payment);
+            // Sample Logic //
+            Payment payment = paymentRepository.findByReservationId(canceled.getId());
+            //payment.setPrice(canceled.getPrice());
+            payment.setStatus("PaymentCanceled");
+            paymentRepository.delete(payment);
+        }
+  
     }
 
 
