@@ -313,6 +313,7 @@ http POST http://gateway:8080/musicals musicalId=1003 name=HOT reservableSeat=10
 
 
 **2. 사용자가 뮤지컬 예약**
+
 2.1 정상예약 #1
 
 - http POST http://localhost:8082/reservations musicalId="1" seats="10" price="50000"
