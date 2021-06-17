@@ -24,7 +24,7 @@ public class PolicyHandler{
             Payment payment = new Payment();
             payment.setReservationId(reserved.getId());
             //payment.setPrice(reserved.getPrice());
-            payment.setStatus("ApprovedPayment");
+            payment.setStatus("PaymentApproved");
             paymentRepository.save(payment);
         }
     }
