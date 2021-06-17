@@ -103,16 +103,15 @@ DDD 적용 후 REST API의 테스트를 통하여 정상적으로 동작하는 �
 ```
 
 
-### GateWay 적용
-API GateWay를 통하여 마이크로 서비스들의 집입점을 통일할 수 있다. 다음과 같이 GateWay를 적용하였다.
+# Gateway 적용
+- gateway > applitcation.yml 설정
+![image](https://user-images.githubusercontent.com/84000848/122344337-a6236380-cf81-11eb-83d9-98f2311b4f6a.png)
+- gateway 테스트
+http POST http://gateway:8080/musicals musicalId=1003 name=HOT reservableSeat=100000 
+![image](https://user-images.githubusercontent.com/84000848/122344967-4b3e3c00-cf82-11eb-8bb1-9cd21999a6d3.png)
+![image](https://user-images.githubusercontent.com/84000848/122345044-601acf80-cf82-11eb-8b79-14a11fdd838e.png)
 
-```
- 소스: gateway 설정된 내용  
-      
-```
-8080 port로 musical 서비스 정상 호출
-```
- 캡쳐 : gateway를 통한 서비스 호출   
+
       
 ```
 
