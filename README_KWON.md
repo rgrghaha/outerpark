@@ -36,262 +36,112 @@
 
 
 
-## 분석/설계
+## Saga, CQRS, Correlation, Req/Resp
+뮤지컬 예약 시스템은 각 마이크로 서비스가 아래와 같은 기능으로 구성되어 있으며,
+마이크로 서비스간 통신은 기본적으로 Pub/Sub 을 통한 Event Driven 구조로 동작하도록 구성하였음.
+![image](https://user-images.githubusercontent.com/84003381/122408528-6da17b00-cfbd-11eb-9651-49f754758615.png)
 
-### AS-IS 조직 (Horizontally-Aligned)
-  ![image](https://user-images.githubusercontent.com/82069747/122220242-1df27f00-ceeb-11eb-9810-6ba9a4a0d725.png)
+![image](https://user-images.githubusercontent.com/84003381/122410244-b574d200-cfbe-11eb-8b49-3dad0dafe79b.png)
 
+### <구현기능별 요약>
 
-### TO-BE 조직 (Vertically-Aligned)
-  ![image](https://user-images.githubusercontent.com/82069747/122219980-e388e200-ceea-11eb-8bf0-658518de2f83.png)
+**Saga**
+- 마이크로 서비스간 통신은 Kafka를 통해 Pub/Sub 통신하도록 구성함. 이를 통해 Event Driven 구조로 각 단계가 진행되도록 함
+- 아래 테스트 시나리오의 전 구간 참조
 
+**CQRS**
+- customercenter (myPage) 서비스의 경우의 경우, 각 마이크로 서비스로부터 Pub/Sub 구조를 통해 받은 데이터를 이용하여 자체 DB로 View를 구성함.
+- 이를 통해 여러 마이크로 서비스에 존재하는 DB간의 Join 등이 필요 없으며, 성능에 대한 이슈없이 빠른 조회가 가능함.
+- 테스트 시나리오의 3.4 과 5.4 항목에 해당
 
-### Event Storming 결과
-![489546E2-B902-49D4-A6AE-1F4C2BD0E6C2](https://user-images.githubusercontent.com/82069747/122322611-b414bc80-cf60-11eb-8cf9-feba63327fcf.jpeg)
+**Correlation**
+- 예약을 하게되면 reservation > payment > notice > MyPage로 주문이 Assigned 되고, 주문 취소가 되면 Status가 deliveryCancelled로 Update 되는 것을 볼 수 있다.
+- 또한 Correlation을 Key를 활용하여 Id를 Key값을 하고 원하는 주문하고 서비스간의 공유가 이루어 졌다.
+- 이 결과로 서로 다른 마이크로 서비스 간에 트랜잭션이 묶여 있음을 알 수 있다.
 
-
-### 헥사고날 아키텍처 다이어그램 도출
-![125E8CD7-E916-4451-921A-DB008FE144CE_4_5005_c](https://user-images.githubusercontent.com/82069747/122322801-05bd4700-cf61-11eb-905b-c280023306f2.jpeg)
-
-## 구현
-분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각각의 포트넘버는 8081 ~ 8084, 8080 이다)
-```
-  cd musical
-  mvn spring-boot:run  
-  
-  cd reservation
-  mvn spring-boot:run  
-
-  cd payment
-  mvn spring-boot:run
-
-  cd notice
-  mvn spring-boot:run 
-
-  cd customercenter
-  mvn spring-boot:run  
-
-  cd gateway
-  mvn spring-boot:run 
-
-```
-
-## DDD 의 적용
-msaez.io를 통해 구현한 Aggregate 단위로 Entity를 선언 후, 구현을 진행하였다.
-
-Entity Pattern과 Repository Pattern을 적용하기 위해 Spring Data REST의 RestRepository를 적용하였다.
-
-**Musical 서비스의 musical.java**
-```java
-package outerpark;
-
-import javax.persistence.*;
-import org.springframework.beans.BeanUtils;
-import java.util.List;
-import java.util.Date;
-
-@Entity
-@Table(name="Musical_table")
-public class Musical {
-
-    @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    private Long id;
-    private Long musicalId;
-    private String name;
-    private Integer reservableSeat;
-
-    @PostPersist
-    public void onPostPersist(){
-        MusicalRegistered musicalRegistered = new MusicalRegistered();
-        BeanUtils.copyProperties(this, musicalRegistered);
-        musicalRegistered.publishAfterCommit();
-    }
-
-    @PostUpdate
-    public void onPostUpdate(){
-        SeatModified seatModified = new SeatModified();
-        BeanUtils.copyProperties(this, seatModified);
-        seatModified.publishAfterCommit();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public Long getMusicalId() {
-        return musicalId;
-    }
-
-    public void setMusicalId(Long musicalId) {
-        this.musicalId = musicalId;
-    }
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getReservableSeat() {
-        return reservableSeat;
-    }
-
-    public void setReservableSeat(Integer reservableSeat) {
-        this.reservableSeat = reservableSeat;
-    }
-}
-
-```
-
-**Payment 서비스의 PolicyHandler.java**
-```java
-package outerpark;
-
-import outerpark.config.kafka.KafkaProcessor;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.stereotype.Service;
-
-@Service
-public class PolicyHandler{
-    @Autowired PaymentRepository paymentRepository;
-
-    @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverReserved_ApprovePayment(@Payload Reserved reserved){
-
-        if (reserved.validate()) {
-            System.out.println("\n\n##### listener ApprovePayment : " + reserved.toJson() + "\n\n");
-
-            // Process payment
-            Payment payment = new Payment();
-            payment.setReservationId(reserved.getId());
-            payment.setStatus("PaymentApproved");
-            paymentRepository.save(payment);
-        }
-    }
-
-    @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverCanceled_CancelPayment(@Payload Canceled canceled){
-
-        if(canceled.validate()) {
-            System.out.println("\n\n##### listener CancelPayment : " + canceled.toJson() + "\n\n");
-
-            // Cancel payment
-            Payment payment = paymentRepository.findByReservationId(canceled.getId());
-            payment.setStatus("PaymentCanceled");
-            paymentRepository.save(payment);
-        }
-    }
-
-    @StreamListener(KafkaProcessor.INPUT)
-    public void whatever(@Payload String eventString){}
-}
-
-```
-
-DDD 적용 후 REST API의 테스트를 통하여 정상적으로 동작하는 것을 확인할 수 있었다.
-
-- Musical 예약 후 payment 처리 결과
-```
-   캡쳐: 뮤지컬 예약 등록 테스트 결과 캡쳐
-   
-   캡쳐: 뮤지컬 예약에 따른 결제승인 결과 캡쳐
-   
-```
+**Req/Resp**
+- musical 마이크로서비스의 잔여좌석수를 초과한 예약 시도시에는, reservation 마이크로서비스에서 예약이 되지 않도록 처리함
+- FeignClient 를 이용한 Req/Resp 연동
+- 테스트 시나리오의 2.1, 2.2, 2.3 항목에 해당하며, 동기호출 결과는 3.1(예약성공시)과 5.1(예약실패시)에서 확인할 수 있다.
 
 
-# Gateway 적용
-- gateway > applitcation.yml 설정
-![image](https://user-images.githubusercontent.com/84000848/122344337-a6236380-cf81-11eb-83d9-98f2311b4f6a.png)
-- gateway 테스트
-http POST http://gateway:8080/musicals musicalId=1003 name=HOT reservableSeat=100000 
-![image](https://user-images.githubusercontent.com/84000848/122344967-4b3e3c00-cf82-11eb-8bb1-9cd21999a6d3.png)
-![image](https://user-images.githubusercontent.com/84000848/122345044-601acf80-cf82-11eb-8b79-14a11fdd838e.png)
+![image](https://user-images.githubusercontent.com/84003381/122410244-b574d200-cfbe-11eb-8b49-3dad0dafe79b.png)
 
+### <구현기능 점검을 위한 테스트 시나리오>
 
-
-### CQRS/saga/correlation
-Materialized View를 구현하여, 타 마이크로서비스의 데이터 원본에 접근없이(Composite 서비스나 조인SQL 등 없이)도 내 서비스의 화면 구성과 잦은 조회가 가능하게 구현해 두었다. 본 프로젝트에서 View 역할은 MyPages 서비스가 수행한다.
-
-#TEST 시나리오
-
-1. MD가 뮤지컬 정보 등록
-   http POST http://localhost:8081/musicals musicalId="1" name="Frozen" reservableSeat="100"
+### 1. MD가 뮤지컬 정보 등록
+- http POST http://localhost:8081/musicals musicalId="1" name="Frozen" reservableSeat="100"
 
 ![image](https://user-images.githubusercontent.com/84000853/122401028-316b1c00-cfb7-11eb-9f20-32f02f150fc9.png)
 
 
-2. 사용자가 뮤지컬 예약
-   2.1 정상예약 #1
-       http POST http://localhost:8082/reservations musicalId="1" seats="10" price="50000"
-       정상예약 #2
-       http POST http://localhost:8082/reservations musicalId="1" seats="15" price="50000"
 
-       ![image](https://user-images.githubusercontent.com/84000853/122401281-6aa38c00-cfb7-11eb-82f1-e86f114466c5.png)
+### 2. 사용자가 뮤지컬 예약
+2.1 정상예약 #1
+- http POST http://localhost:8082/reservations musicalId="1" seats="10" price="50000"
 
-   2.2 MD가 관리하는 뮤지컬 정보상의 좌석수(잔여좌석수)를 초과한 예약 시도시에는 예약이 되지 않도록 처리함
-       - FeignClient를 이용한 Req/Resp 연동
-       http POST http://localhost:8082/reservations musicalId="1" seats="200" price="50000"
-       ![image](https://user-images.githubusercontent.com/84000853/122401363-7bec9880-cfb7-11eb-88b6-4fb3febc23f7.png)
+2.2 정상예약 #2
+- http POST http://localhost:8082/reservations musicalId="1" seats="15" price="50000"
+
+![image](https://user-images.githubusercontent.com/84000853/122401281-6aa38c00-cfb7-11eb-82f1-e86f114466c5.png)
+
+2.3 MD가 관리하는 뮤지컬 정보상의 좌석수(잔여좌석수)를 초과한 예약 시도시에는 예약이 되지 않도록 처리함
+- FeignClient를 이용한 Req/Resp 연동
+- http POST http://localhost:8082/reservations musicalId="1" seats="200" price="50000"
+
+![image](https://user-images.githubusercontent.com/84000853/122401363-7bec9880-cfb7-11eb-88b6-4fb3febc23f7.png)
 
 
-3. 뮤지컬 예약 후, 각 마이크로 서비스내 Pub/Sub을 통해 변경된 데이터 확인 
-   3.1 뮤지컬 정보 조회 (좌석수량 차감여부 확인)  --> 좌석수가 75로 줄어듦
-       http GET http://localhost:8081/musicals/1
-       ![image](https://user-images.githubusercontent.com/84000853/122401410-87d85a80-cfb7-11eb-96a2-a63c95ebba9d.png)
+
+### 3. 뮤지컬 예약 후, 각 마이크로 서비스내 Pub/Sub을 통해 변경된 데이터 확인
+3.1 뮤지컬 정보 조회 (좌석수량 차감여부 확인)  --> 좌석수가 75로 줄어듦
+- http GET http://localhost:8081/musicals/1
+![image](https://user-images.githubusercontent.com/84000853/122401410-87d85a80-cfb7-11eb-96a2-a63c95ebba9d.png)
    
-       
-   3.2 요금결제 내역 조회     --> 2 Row 생성 : Reservation 생성 2건
-       http GET http://localhost:8083/payments
-       ![image](https://user-images.githubusercontent.com/84000853/122401517-a50d2900-cfb7-11eb-814f-a8eb7789d8a6.png)
+3.2 요금결제 내역 조회     --> 2 Row 생성 : Reservation 생성 2건
+- http GET http://localhost:8083/payments
+![image](https://user-images.githubusercontent.com/84000853/122401517-a50d2900-cfb7-11eb-814f-a8eb7789d8a6.png)
 
        
-   3.3 알림 조회              --> 2 Row 생성 : PaymentApproved 생성 2건
-       http GET http://localhost:8084/notices
-       ![image](https://user-images.githubusercontent.com/84000853/122401559-af2f2780-cfb7-11eb-903e-faf850510de7.png)
+3.3 알림 조회              --> 2 Row 생성 : PaymentApproved 생성 2건
+- http GET http://localhost:8084/notices
+![image](https://user-images.githubusercontent.com/84000853/122401559-af2f2780-cfb7-11eb-903e-faf850510de7.png)
 
        
-   3.4 마이페이지 조회        --> 2 Row 생성 : Reservation  2건 ->> PaymentApproved  2건 변경
-       http GET http://localhost:8085/myPages
-       ![image](https://user-images.githubusercontent.com/84000853/122401619-bb1ae980-cfb7-11eb-874c-af75fc0fde93.png)
+3.4 마이페이지 조회        --> 2 Row 생성 : Reservation 생성 2건 후 > PaymentApproved 로 업데이트됨
+- http GET http://localhost:8085/myPages
+![image](https://user-images.githubusercontent.com/84000853/122401619-bb1ae980-cfb7-11eb-874c-af75fc0fde93.png)
 
 
 
-4. 사용자가 뮤지컬 예약 취소
-   4.1 예약번호 #1을 취소함
-   http DELETE http://localhost:8082/reservations/1
-   ![image](https://user-images.githubusercontent.com/84000853/122401687-c837d880-cfb7-11eb-983f-7b653ebe25da.png)
+### 4. 사용자가 뮤지컬 예약 취소
+4.1 예약번호 #1을 취소함
+- http DELETE http://localhost:8082/reservations/1
+![image](https://user-images.githubusercontent.com/84000853/122401687-c837d880-cfb7-11eb-983f-7b653ebe25da.png)
 
    
-   4.2 취소내역 확인 (#2만 남음)
-   http GET http://localhost:8082/reservations
-   ![image](https://user-images.githubusercontent.com/84000853/122401728-d128aa00-cfb7-11eb-9eb1-9b08498328ea.png)
+4.2 취소내역 확인 (#2만 남음)
+- http GET http://localhost:8082/reservations
+![image](https://user-images.githubusercontent.com/84000853/122401728-d128aa00-cfb7-11eb-9eb1-9b08498328ea.png)
 
 
-5. 뮤지컬 예약 취소 후, 각 마이크로 서비스내 Pub/Sub을 통해 변경된 데이터 확인
-   5.1 뮤지컬 정보 조회 (좌석수량 증가여부 확인)  --> 좌석수가 85로 늘어남
-       http GET http://localhost:8081/musicals/1
-       ![image](https://user-images.githubusercontent.com/84000853/122401785-e1408980-cfb7-11eb-95f9-31487e09c955.png)
 
-   5.2 요금결제 내역 조회    --> 1번 예약에 대한 결제건이 paymentCancelled 로 변경됨 (UPDATE)
-       http GET http://localhost:8083/payments
-       ![image](https://user-images.githubusercontent.com/84000853/122401809-e69dd400-cfb7-11eb-8216-8fb55d87c36f.png)
+### 5. 뮤지컬 예약 취소 후, 각 마이크로 서비스내 Pub/Sub을 통해 변경된 데이터 확인
+5.1 뮤지컬 정보 조회 (좌석수량 증가여부 확인)  --> 좌석수가 85로 늘어남
+- http GET http://localhost:8081/musicals/1
+![image](https://user-images.githubusercontent.com/84000853/122401785-e1408980-cfb7-11eb-95f9-31487e09c955.png)
 
-   5.3 알림 조회             --> 1번 예약에 대한 예약취소건이 paymentCancelled 로 1 row 추가됨 (INSERT)
-       http GET http://localhost:8084/notices
-       ![image](https://user-images.githubusercontent.com/84000853/122401844-eef60f00-cfb7-11eb-8303-52bd835137ce.png)
+5.2 요금결제 내역 조회    --> 1번 예약에 대한 결제건이 paymentCancelled 로 변경됨 (UPDATE)
+- http GET http://localhost:8083/payments
+![image](https://user-images.githubusercontent.com/84000853/122401809-e69dd400-cfb7-11eb-8216-8fb55d87c36f.png)
 
-   5.4 마이페이지 조회       --> 1 Row 추가 생성 : PaymentCancelled 생성 1건
-       http GET http://localhost:8085/myPages
-       ![image](https://user-images.githubusercontent.com/84000853/122401898-f87f7700-cfb7-11eb-86ee-7e5b7ce2d814.png)
+5.3 알림 조회             --> 1번 예약에 대한 예약취소건이 paymentCancelled 로 1 row 추가됨 (INSERT)
+- http GET http://localhost:8084/notices
+![image](https://user-images.githubusercontent.com/84000853/122401844-eef60f00-cfb7-11eb-8303-52bd835137ce.png)
+
+5.4 마이페이지 조회       --> 1 Row 추가 생성 : PaymentCancelled 생성 1건
+- http GET http://localhost:8085/myPages
+![image](https://user-images.githubusercontent.com/84000853/122401898-f87f7700-cfb7-11eb-86ee-7e5b7ce2d814.png)
 
        
 
