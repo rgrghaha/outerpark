@@ -1,0 +1,82 @@
+server:
+  port: 8088
+
+---
+
+spring:
+  profiles: default
+  cloud:
+    gateway:
+      routes:
+        - id: musical
+          uri: http://localhost:8081
+          predicates:
+            - Path=/musicals/** 
+        - id: reservation
+          uri: http://localhost:8082
+          predicates:
+            - Path=/reservations/** 
+        - id: payment
+          uri: http://localhost:8083
+          predicates:
+            - Path=/payments/** 
+        - id: notice
+          uri: http://localhost:8084
+          predicates:
+            - Path=/notices/** 
+        - id: customercenter
+          uri: http://localhost:8085
+          predicates:
+            - Path= /myPages/**
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "*"
+            allowedMethods:
+              - "*"
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+
+---
+
+spring:
+  profiles: docker
+  cloud:
+    gateway:
+      routes:
+        - id: musical
+          uri: http://musical:8080
+          predicates:
+            - Path=/musicals/** 
+        - id: reservation
+          uri: http://reservation:8080
+          predicates:
+            - Path=/reservations/** 
+        - id: payment
+          uri: http://payment:8080
+          predicates:
+            - Path=/payments/** 
+        - id: notice
+          uri: http://notice:8080
+          predicates:
+            - Path=/notices/** 
+        - id: customercenter
+          uri: http://customercenter:8080
+          predicates:
+            - Path= /myPages/**
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "*"
+            allowedMethods:
+              - "*"
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+server:
+  port: 8080
