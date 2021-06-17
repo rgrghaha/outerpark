@@ -21,6 +21,13 @@ public class MyPageViewHandler {
     public void whenReserved_then_CREATE_1 (@Payload Reserved reserved) {
         try {
 
+            System.out.println("####################################################");
+            System.out.println("##### reserved.validate() : [" + reserved.validate() + "] #####");
+            System.out.println("##### reserved.getEventType().equals(getClass().getSimpleName()) : [" + reserved.getEventType().equals(getClass().getSimpleName()) + "] #####");
+            System.out.println("##### reserved.getEventType() : [" + reserved.getEventType() + "] #####");
+            System.out.println("##### getClass().getSimpleName() : [" + getClass().getSimpleName() + "] #####");
+            System.out.println("####################################################");
+
             if (!reserved.validate()) return;
 
             // view 객체 생성
@@ -29,6 +36,7 @@ public class MyPageViewHandler {
             myPage.setReservationId(reserved.getId());
             myPage.setMusicalId(reserved.getMusicalId());
             myPage.setSeats(reserved.getSeats());
+            myPage.setStatus(reserved.getStatus());
             // view 레파지 토리에 save
             myPageRepository.save(myPage);
         
@@ -47,8 +55,8 @@ public class MyPageViewHandler {
             if( myPageOptional.isPresent()) {
                 MyPage myPage = myPageOptional.get();
                 // view 객체에 이벤트의 eventDirectValue 를 set 함
-                    myPage.setPaymentId(paymentApproved.getId());
-                    myPage.setStatus(paymentApproved.getStatus());
+                myPage.setPaymentId(paymentApproved.getId());
+                myPage.setStatus(paymentApproved.getStatus());
                 // view 레파지 토리에 save
                 myPageRepository.save(myPage);
             }
@@ -66,7 +74,7 @@ public class MyPageViewHandler {
             if( myPageOptional.isPresent()) {
                 MyPage myPage = myPageOptional.get();
                 // view 객체에 이벤트의 eventDirectValue 를 set 함
-                    myPage.setStatus(paymentCancelled.getStatus());
+                myPage.setStatus(paymentCancelled.getStatus());
                 // view 레파지 토리에 save
                 myPageRepository.save(myPage);
             }
