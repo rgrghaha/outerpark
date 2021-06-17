@@ -30,13 +30,16 @@ spring:
         event-out:
           destination: outerpark
           contentType: application/json
-
 logging:
   level:
     org.hibernate.type: trace
     org.springframework.cloud: debug
 server:
   port: 8082
+
+api: 
+  url: 
+    musical: http://localhost:8081
 ---
 
 spring:
@@ -62,3 +65,6 @@ spring:
         event-out:
           destination: outerpark
           contentType: application/json
+api: 
+  url: 
+    musical: ${configurl}
