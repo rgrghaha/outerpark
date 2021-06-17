@@ -32,6 +32,23 @@ public class Payment {
             paymentCancelled.publishAfterCommit();
     }
 
+    @PostUpdate
+    public void onPostUpdate(){
+        System.out.println("####################################################");
+        System.out.println("##### Payment - PostUpdate - this.getStatus() : [" + this.getStatus() + "] #####");
+        System.out.println("####################################################");
+
+        PaymentApproved paymentApproved = new PaymentApproved();
+        BeanUtils.copyProperties(this, paymentApproved);
+        if(this.getStatus().equals("PaymentApproved"))
+            paymentApproved.publishAfterCommit();
+
+
+        PaymentCancelled paymentCancelled = new PaymentCancelled();
+        BeanUtils.copyProperties(this, paymentCancelled);
+        if(this.getStatus().equals("PaymentCanceled"))
+            paymentCancelled.publishAfterCommit();
+    }
 
     public Long getId() {
         return id;
