@@ -17,14 +17,19 @@ public class Payment {
 
     @PostPersist
     public void onPostPersist(){
+        System.out.println("####################################################");
+        System.out.println("##### Payment - PostPersist - this.getStatus() : [" + this.getStatus() + "] #####");
+        System.out.println("####################################################");
+
         PaymentApproved paymentApproved = new PaymentApproved();
         BeanUtils.copyProperties(this, paymentApproved);
-        paymentApproved.publishAfterCommit();
+        if(this.getStatus().equals("PaymentApproved"))
+            paymentApproved.publishAfterCommit();
 
-
-        //PaymentCancelled paymentCancelled = new PaymentCancelled();
-        //BeanUtils.copyProperties(this, paymentCancelled);
-        //paymentCancelled.publishAfterCommit();
+        PaymentCancelled paymentCancelled = new PaymentCancelled();
+        BeanUtils.copyProperties(this, paymentCancelled);
+        if(this.getStatus().equals("PaymentCanceled"))
+            paymentCancelled.publishAfterCommit();
     }
 
 
