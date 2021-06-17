@@ -217,9 +217,6 @@ http POST http://gateway:8080/musicals musicalId=1003 name=HOT reservableSeat=10
 ![image](https://user-images.githubusercontent.com/84000848/122345044-601acf80-cf82-11eb-8b79-14a11fdd838e.png)
 
 
-      
-```
-
 
 ### CQRS/saga/correlation
 Materialized View를 구현하여, 타 마이크로서비스의 데이터 원본에 접근없이(Composite 서비스나 조인SQL 등 없이)도 내 서비스의 화면 구성과 잦은 조회가 가능하게 구현해 두었다. 본 프로젝트에서 View 역할은 MyPages 서비스가 수행한다.
@@ -238,12 +235,12 @@ Materialized View를 구현하여, 타 마이크로서비스의 데이터 원본
        정상예약 #2
        http POST http://localhost:8082/reservations musicalId="1" seats="15" price="50000"
 
-![image](https://user-images.githubusercontent.com/84000853/122401281-6aa38c00-cfb7-11eb-82f1-e86f114466c5.png)
+       ![image](https://user-images.githubusercontent.com/84000853/122401281-6aa38c00-cfb7-11eb-82f1-e86f114466c5.png)
 
    2.2 MD가 관리하는 뮤지컬 정보상의 좌석수(잔여좌석수)를 초과한 예약 시도시에는 예약이 되지 않도록 처리함
        - FeignClient를 이용한 Req/Resp 연동
        http POST http://localhost:8082/reservations musicalId="1" seats="200" price="50000"
-![image](https://user-images.githubusercontent.com/84000853/122401363-7bec9880-cfb7-11eb-88b6-4fb3febc23f7.png)
+       ![image](https://user-images.githubusercontent.com/84000853/122401363-7bec9880-cfb7-11eb-88b6-4fb3febc23f7.png)
 
 
 3. 뮤지컬 예약 후, 각 마이크로 서비스내 Pub/Sub을 통해 변경된 데이터 확인 
@@ -276,7 +273,7 @@ Materialized View를 구현하여, 타 마이크로서비스의 데이터 원본
    
    4.2 취소내역 확인 (#2만 남음)
    http GET http://localhost:8082/reservations
-![image](https://user-images.githubusercontent.com/84000853/122401728-d128aa00-cfb7-11eb-9eb1-9b08498328ea.png)
+   ![image](https://user-images.githubusercontent.com/84000853/122401728-d128aa00-cfb7-11eb-9eb1-9b08498328ea.png)
 
 
 5. 뮤지컬 예약 취소 후, 각 마이크로 서비스내 Pub/Sub을 통해 변경된 데이터 확인
