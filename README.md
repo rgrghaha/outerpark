@@ -217,13 +217,6 @@ public class PolicyHandler{
 
 DDD 적용 후 REST API의 테스트를 통하여 정상적으로 동작하는 것을 확인할 수 있었다.
 
-**Musical 예약 후 payment 처리 결과**
-
-```
-   캡쳐: 뮤지컬 예약 등록 테스트 결과 캡쳐
-   
-   캡쳐: 뮤지컬 예약에 따른 결제승인 결과 캡쳐   
-```
 
 ### 2.2. Polyglot Persistence 구조
 musical, payment, notice, customercenter 서비스는 H2 DB를 사용하게끔 구성되어 있고
@@ -253,7 +246,7 @@ reservation 서비스는 HSQLDB 를 사용하도록 구성되어 있어서, DB �
 
 ### 2.3. Gateway 적용
 
-**gateway > applitcation.yml 설정**
+**gateway > application.yml 설정**
 ![image](https://user-images.githubusercontent.com/84000848/122344337-a6236380-cf81-11eb-83d9-98f2311b4f6a.png)
 
 **gateway 테스트**
