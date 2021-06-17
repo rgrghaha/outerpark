@@ -13,7 +13,7 @@
 1. Deploy/ Pipeline (O)
 1. Circuit Breaker (O)
 1. Autoscale (HPA) (O)
-1. Zero-downtime deploy (Readiness Probe)
+1. Zero-downtime deploy (Readiness Probe)(O)
 1. Config Map/ Persistence Volume
 1. Polyglot (O)
 1. Self-healing (Liveness Probe)(O)
