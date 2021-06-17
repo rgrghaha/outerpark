@@ -554,7 +554,7 @@ kubectl get deploy reservation -w -n outerpark
 
 ![image](https://user-images.githubusercontent.com/84000848/122361938-ad06a200-cf92-11eb-9a55-35f9b6ceefe0.png)
 
-### 3.4 Self-healing (Liveness Probe)
+### 3.4. Self-healing (Liveness Probe)
 
 - musical 서비스 정상 확인
 
@@ -588,4 +588,37 @@ kubectl get deploy reservation -w -n outerpark
 
 ![image](https://user-images.githubusercontent.com/84000848/122401681-c66e1500-cfb7-11eb-9417-4ff189919f62.png)
 
+
+### 3.5. Zero-downtime deploy(Readiness Probe)
+- Zero-downtime deploy를 위해 Autoscale 및 CB 설정 제거 
+- readiness 옵션이 없는 reservation 배포
+- seige로 부하 준비 후 실행 
+- seige로 부하 실행 중 reservation 새로운 버전의 이미지로 교체
+- readiness 옵션이 없는 경우 배포 중 서비스 요청처리 실패
+
+![image](https://user-images.githubusercontent.com/84000848/122414855-69c42780-cfc2-11eb-8955-30e623e721c6.png)
+
+- deployment.yml에 readiness 옵션을 추가
+
+![image](https://user-images.githubusercontent.com/84000848/122416039-5d8c9a00-cfc3-11eb-84b1-9eb4ce1b6e9d.png)
+
+-readiness적용된 deployment.yml 적용
+
+```
+kubectl apply -f kubernetes/deployment.yml
+```
+-새로운 버전의 이미지로 교체
+
+```
+az acr build --registry outerparkskacr --image outerparkskacr.azurecr.io/reservation:v3 .
+kubectl set image deploy reservation reservation=outerparkskacr.azurecr.io/reservation:v3 -n outerpark
+```
+
+-기존 버전과 새 버전의 store pod 공존 중
+
+![image](https://user-images.githubusercontent.com/84000848/122417105-36829800-cfc4-11eb-9849-054cf58119f2.png)
+
+-Availability: 100.00 % 확인
+
+![image](https://user-images.githubusercontent.com/84000848/122417302-5a45de00-cfc4-11eb-87d1-cc7482113a33.png)
 
