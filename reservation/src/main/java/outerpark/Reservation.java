@@ -55,6 +55,8 @@ public class Reservation {
     public void onPreRemove(){
         
         Canceled canceled = new Canceled();
+        canceled.setId(this.getId());
+        canceled.setStatus("SeatCanceled");
         BeanUtils.copyProperties(this, canceled);
         canceled.publishAfterCommit();
     }
