@@ -83,13 +83,118 @@ Entity Pattern과 Repository Pattern을 적용하기 위해 Spring Data REST의 
 
 **Musical 서비스의 musical.java**
 ```
-   소스: JPA DB 
- 
+package outerpark;
+
+import javax.persistence.*;
+import org.springframework.beans.BeanUtils;
+import java.util.List;
+import java.util.Date;
+
+@Entity
+@Table(name="Musical_table")
+public class Musical {
+
+    @Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
+    private Long id;
+    private Long musicalId;
+    private String name;
+    private Integer reservableSeat;
+
+    @PostPersist
+    public void onPostPersist(){
+        MusicalRegistered musicalRegistered = new MusicalRegistered();
+        BeanUtils.copyProperties(this, musicalRegistered);
+        musicalRegistered.publishAfterCommit();
+    }
+
+    @PostUpdate
+    public void onPostUpdate(){
+        SeatModified seatModified = new SeatModified();
+        BeanUtils.copyProperties(this, seatModified);
+        seatModified.publishAfterCommit();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+    public Long getMusicalId() {
+        return musicalId;
+    }
+
+    public void setMusicalId(Long musicalId) {
+        this.musicalId = musicalId;
+    }
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getReservableSeat() {
+        return reservableSeat;
+    }
+
+    public void setReservableSeat(Integer reservableSeat) {
+        this.reservableSeat = reservableSeat;
+    }
+}
+
 ```
 
 **Payment 서비스의 PolicyHandler.java**
 ```
-   소스: policy handler 
+package outerpark;
+
+import outerpark.config.kafka.KafkaProcessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Service;
+
+@Service
+public class PolicyHandler{
+    @Autowired PaymentRepository paymentRepository;
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverReserved_ApprovePayment(@Payload Reserved reserved){
+
+        if (reserved.validate()) {
+            System.out.println("\n\n##### listener ApprovePayment : " + reserved.toJson() + "\n\n");
+
+            // Process payment
+            Payment payment = new Payment();
+            payment.setReservationId(reserved.getId());
+            payment.setStatus("PaymentApproved");
+            paymentRepository.save(payment);
+        }
+    }
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverCanceled_CancelPayment(@Payload Canceled canceled){
+
+        if(canceled.validate()) {
+            System.out.println("\n\n##### listener CancelPayment : " + canceled.toJson() + "\n\n");
+
+            // Cancel payment
+            Payment payment = paymentRepository.findByReservationId(canceled.getId());
+            payment.setStatus("PaymentCanceled");
+            paymentRepository.save(payment);
+        }
+    }
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whatever(@Payload String eventString){}
+}
+
 ```
 
 DDD 적용 후 REST API의 테스트를 통하여 정상적으로 동작하는 것을 확인할 수 있었다.
