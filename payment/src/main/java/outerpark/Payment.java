@@ -22,11 +22,9 @@ public class Payment {
         paymentApproved.publishAfterCommit();
 
 
-        PaymentCancelled paymentCancelled = new PaymentCancelled();
-        BeanUtils.copyProperties(this, paymentCancelled);
-        paymentCancelled.publishAfterCommit();
-
-
+        //PaymentCancelled paymentCancelled = new PaymentCancelled();
+        //BeanUtils.copyProperties(this, paymentCancelled);
+        //paymentCancelled.publishAfterCommit();
     }
 
 
