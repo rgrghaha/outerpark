@@ -9,11 +9,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Date;
 
-@FeignClient(name="musical", url="http://musical:8080")
+//@FeignClient(name="musical", url="http://localhost:8081")
+@FeignClient(name="musical", url="${api.url.musical}")
 public interface MusicalService {
 
-    // @RequestMapping(method= RequestMethod.GET, path="/musicals")
-    // public void modifySeat(@RequestBody Musical musical);
     @RequestMapping(method= RequestMethod.GET, path="/chkAndModifySeat")
     public boolean modifySeat(@RequestParam("musicalId") String musicalId,
                               @RequestParam("seats") int seatCount);
