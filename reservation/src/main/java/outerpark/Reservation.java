@@ -24,7 +24,6 @@ public class Reservation {
     // Reservation 수행시, Musical에 사전 등록된 좌석수(혹은 타 reservation을 통해 차감된 최종 남은 좌석수)를 초과하여 예약시도 할 경우,
     // 신규 reservation의 persist(POST)가 되지 않도록 처리하여야 한다.
     //
-    // 따라서 @PostPersist를 @PrePersist, onPrePersist()로 변경하고
     // Musical MicroService에서 좌석수 체크 (http://localhost:8081/musicals의 /chkAndModifySeat) 결과가 false 로 나올 경우
     // 강제 Exception을 발생시켜서, reservation 이 POST되지 않도록 처리한다.
     // *************************************************************************
