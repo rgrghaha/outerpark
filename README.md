@@ -548,14 +548,6 @@ kubectl get deploy reservation -w -n outerpark
 
 - musical의 deployment.yml 에 Liveness Probe 옵션 변경하여 계속 실패하여 재기동 되도록 yml 수정
 ```
-#          livenessProbe:
-#            httpGet:
-#              path: '/actuator/health'
-#              port: 8080
-#            initialDelaySeconds: 120
-#            timeoutSeconds: 2
-#            periodSeconds: 5
-#            failureThreshold: 5
           livenessProbe:
             tcpSocket:
               port: 8081
