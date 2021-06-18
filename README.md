@@ -3,22 +3,6 @@
 
 
 
-## 체크포인트
-
-1. Saga (O)
-1. CQRS (O)
-1. Correlation (O)
-1. Req/Resp (O)
-1. Gateway (O)
-1. Deploy/ Pipeline (O)
-1. Circuit Breaker (O)
-1. Autoscale (HPA) (O)
-1. Zero-downtime deploy (Readiness Probe)(O)
-1. Config Map/ Persistence Volume
-1. Polyglot (O)
-1. Self-healing (Liveness Probe)(O)
-
-
 # OuterPark(뮤지컬 예약)
 
 
@@ -623,7 +607,7 @@ kubectl set image deploy reservation reservation=outerparkskacr.azurecr.io/reser
 ![image](https://user-images.githubusercontent.com/84000848/122417302-5a45de00-cfc4-11eb-87d1-cc7482113a33.png)
 
 ### 3.6. Config Map
-apllication.yml 설정
+application.yml 설정
 
 -default부분
 
