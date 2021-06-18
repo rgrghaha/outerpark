@@ -281,6 +281,9 @@ http POST http://gateway:8080/musicals musicalId=1003 name=HOT reservableSeat=10
 
 **<구현기능 점검을 위한 테스트 시나리오>**
 
+![image](https://user-images.githubusercontent.com/84003381/122501058-e4c32780-d02e-11eb-9ca7-5c2637c4480d.png)
+
+
 **1. MD가 뮤지컬 정보 등록**
 
 - http POST http://localhost:8081/musicals musicalId="1" name="Frozen" reservableSeat="100"
