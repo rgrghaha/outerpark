@@ -36,7 +36,7 @@
 5. 결제정보가 승인되면 알림메시지를 발송한다. 
 6. 고객이 뮤지컬 예약을 취소할 수 있다. 
 7. 예약이 취소되면 결제가 취소된다.
-8. 결제가 최소되면 알림메시지를 발송한다.
+8. 결제가 취소되면 알림메시지를 발송한다.
 9. 고객이 모든 진행내역을 볼 수 있어야 한다.
 ```
 
@@ -283,7 +283,7 @@ http POST http://gateway:8080/musicals musicalId=1003 name=HOT reservableSeat=10
 
 [Correlation]
 - 예약을 하게되면 reservation > payment > notice > MyPage로 주문이 Assigned 되고, 주문 취소가 되면 Status가 deliveryCancelled로 Update 되는 것을 볼 수 있다.
-- 또한 Correlation을 Key를 활용하여 Id를 Key값을 하고 원하는 주문하고 서비스간의 공유가 이루어 졌다.
+- 또한 Correlation Key를 구현하기 위해 각 마이크로서비스에서 관리하는 데이터의 Id값을 전달받아서 서비스간의 연관 처리를 수행하였다.
 - 이 결과로 서로 다른 마이크로 서비스 간에 트랜잭션이 묶여 있음을 알 수 있다.
 
 [Req/Resp]
@@ -449,9 +449,9 @@ kubectl get all -n outerpark
 **payment, musical, notice, customercenter, gateway에도 동일한 작업 반복**
 *최종 결과
 
-![image](https://user-images.githubusercontent.com/84000848/122335324-0dd3b180-cf76-11eb-967a-6ddd4c7aaeaa.png)
+![image](https://user-images.githubusercontent.com/84000848/122349147-eafdc900-cf86-11eb-96bb-a50afe56ad58.png)
 
-- 7) deployment.yml을 사용하여 배포 (reservation의 deployment.yml 추가)
+- deployment.yml을 사용하여 배포 (reservation의 deployment.yml 추가)
 
 ![image](https://user-images.githubusercontent.com/84000848/122332320-2d1c1000-cf71-11eb-8766-b494f157f247.png)
 - deployment.yml로 서비스 배포
@@ -614,7 +614,7 @@ az acr build --registry outerparkskacr --image outerparkskacr.azurecr.io/reserva
 kubectl set image deploy reservation reservation=outerparkskacr.azurecr.io/reservation:v3 -n outerpark
 ```
 
--기존 버전과 새 버전의 store pod 공존 중
+-기존 버전과 새 버전의 reservation pod 공존 중
 
 ![image](https://user-images.githubusercontent.com/84000848/122417105-36829800-cfc4-11eb-9849-054cf58119f2.png)
 
